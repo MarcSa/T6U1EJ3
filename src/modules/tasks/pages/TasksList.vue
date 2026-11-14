@@ -84,14 +84,58 @@ const search = ref<string>('');
 
 const filteredTasks = computed(() => {
   const term = search.value.trim().toLowerCase();
-  if (term === '') return tasks.value;
-  return tasks.value.filter(
+
+  const result = tasks.value.filter(
     (task) =>
       task.name.toLowerCase().includes(term) ||
       (task.description ?? '').toLowerCase().includes(term),
   );
+  // exercici T6U1EJ3
+  if (sortByDate.value !== 'none') {
+    result.sort((a, b) => {
+      const difference = Date.parse(a.dueDate) - Date.parse(b.dueDate);
+
+      return sortByDate.value === 'sort' ? difference : -difference;
+    });
+  }
+  if (sortByPriority.value !== 'none') {
+    result.sort((a, b) => {
+      const difference = priorityValueRelation[b.priority] - priorityValueRelation[a.priority];
+
+      return sortByPriority.value === 'sort' ? difference : -difference;
+    });
+  }
+  // /exercici T6U1EJ3
+  return result;
 });
 // /exercici T6U1EJ2
+
+// exercici T6U1EJ3
+type Sort = 'sort' | 'reverse-sort' | 'none';
+const sortByDate = ref<Sort>('none');
+const sortByPriority = ref<Sort>('none');
+
+const priorityValueRelation: Record<TaskPriority, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+};
+const changeDateSort = () => {
+  sortByPriority.value = 'none';
+  sortByDate.value = sortByDate.value === 'sort' ? 'reverse-sort' : 'sort';
+};
+const changePrimarySort = () => {
+  sortByDate.value = 'none';
+  sortByPriority.value = sortByPriority.value === 'sort' ? 'reverse-sort' : 'sort';
+};
+
+const cleanSort = () => {
+  sortByPriority.value = 'none';
+  sortByDate.value = 'none';
+  console.log('sortByPriority: ' + sortByPriority.value, 'sortByDate: ' + sortByDate.value);
+};
+
+// /exercici T6U1EJ3
 
 onMounted(loadTasks);
 </script>
@@ -119,6 +163,22 @@ onMounted(loadTasks);
     >
       No hay tareas que coincidan con la búsqueda.
     </p>
+    <!-- sort by -->
+    <div class="btn-container" v-if="!loading && filteredTasks.length">
+      <button type="button" class="btn btn-outline-primary me-2" @click="changeDateSort">
+        Ordenar por fecha <span v-if="sortByDate === 'sort'">&uarr;</span>
+        <span v-if="sortByDate === 'reverse-sort'">&darr;</span>
+      </button>
+      <button type="button" class="btn btn-outline-primary me-2" @click="changePrimarySort">
+        Ordenar por prioridad <span v-if="sortByPriority === 'sort'">&uarr;</span>
+        <span v-if="sortByPriority === 'reverse-sort'">&darr;</span>
+      </button>
+      <button type="button" class="btn btn-outline-secondary" @click="cleanSort">
+        Limpiar orden
+      </button>
+    </div>
+    <!-- /sort by -->
+    <hr v-if="!loading && filteredTasks.length" class="mb-5" />
     <!-- /Buscar -->
     <div class="d-flex gap-2 mb-3">
       <button
